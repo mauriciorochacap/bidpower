@@ -1,13 +1,12 @@
-import type { Question } from "@/lib/questions";
-import type { AnswerValue } from "@/lib/decisionEngine";
+import type { Question, QuestionOption } from "@/lib/questions";
 
 interface QuestionCardProps {
   question: Question;
-  selectedValue: AnswerValue | undefined;
-  onSelect: (value: AnswerValue) => void;
+  selectedValue: string | number | undefined;
+  onSelect: (value: string | number) => void;
 }
 
-const OPTION_LETTERS = ["A", "B", "C"];
+const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 export default function QuestionCard({ question, selectedValue, onSelect }: QuestionCardProps) {
   return (
@@ -22,11 +21,11 @@ export default function QuestionCard({ question, selectedValue, onSelect }: Ques
 
       {/* Options */}
       <div className="flex flex-col gap-3">
-        {question.options.map((option, idx) => {
+        {question.options.map((option: QuestionOption, idx: number) => {
           const isSelected = selectedValue === option.value;
           return (
             <button
-              key={option.value}
+              key={String(option.value)}
               onClick={() => onSelect(option.value)}
               className={`w-full text-left rounded-xl border-2 px-5 py-4 transition-all duration-150 flex items-center gap-4
                 ${

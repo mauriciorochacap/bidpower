@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { QUESTIONS } from "@/lib/questions";
-import type { UserAnswers, AnswerValue } from "@/lib/decisionEngine";
+import type { UserAnswers } from "@/lib/decisionEngine";
 import { evaluate } from "@/lib/decisionEngine";
+import { selectQuestions } from "@/lib/questionSelector";
 import { useAppState } from "@/context/AppContext";
-import type { BidSignals } from "@/lib/bidSignals";
+import type { BidAnalysis } from "@/lib/bidSignals";
+import { defaultSignals } from "@/lib/bidSignals";
+import type { Question } from "@/lib/questions";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import UploadStep from "@/components/UploadStep";
@@ -21,38 +23,56 @@ export default function QuestionnairePage() {
   const [phase, setPhase] = useState<Phase>("upload");
   const [step, setStep] = useState(0);
   const [answers, setLocalAnswers] = useState<Partial<UserAnswers>>({});
-  const [docSignals, setDocSignals] = useState<BidSignals | null>(null);
-
-  const question = QUESTIONS[step];
-  const totalSteps = QUESTIONS.length;
-  const selectedValue = answers[question?.id];
-  const isLast = step === totalSteps - 1;
+  const [bidAnalysis, setBidAnalysis] = useState<BidAnalysis | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   // ── Upload handlers ──────────────────────────────────────────────────────
 
-  function handleUploadComplete(text: string, fileName: string, signals: BidSignals) {
-    setBidDocument(text, fileName, signals);
-    setDocSignals(signals);
+  function handleUploadComplete(text: string, fileName: string, analysis: BidAnalysis) {
+    setBidDocument(text, fileName, analysis);
+    setBidAnalysis(analysis);
+    const selected = selectQuestions(analysis.signals, analysis.interpretation);
+    setQuestions(selected);
     setPhase("questions");
   }
 
   function handleUploadSkip() {
-    setDocSignals(null);
+    const fallbackAnalysis: BidAnalysis = {
+      signals: defaultSignals(),
+      interpretation: {
+        decisionType: "Unknown — no document provided",
+        uncertainty: "Unknown",
+        confidence: "low",
+        assumptions: ["No bid document was uploaded — all signals are set to medium defaults."],
+        signalSummaries: [],
+      },
+    };
+    setBidDocument("", "", fallbackAnalysis);
+    setBidAnalysis(fallbackAnalysis);
+    const selected = selectQuestions(fallbackAnalysis.signals, fallbackAnalysis.interpretation);
+    setQuestions(selected);
     setPhase("questions");
   }
 
   // ── Question handlers ────────────────────────────────────────────────────
 
-  function handleSelect(value: AnswerValue) {
+  const question = questions[step];
+  const totalSteps = questions.length;
+  const selectedValue = question ? answers[question.id] : undefined;
+  const isLast = step === totalSteps - 1;
+
+  function handleSelect(value: string | number) {
+    if (!question) return;
     setLocalAnswers((prev) => ({ ...prev, [question.id]: value }));
   }
 
   function handleNext() {
-    if (!selectedValue) return;
+    if (selectedValue === undefined) return;
     if (isLast) {
       const finalAnswers = { ...answers } as UserAnswers;
       setAnswers(finalAnswers);
-      const result = evaluate(finalAnswers, docSignals?.scoreAdjustments);
+      const signals = bidAnalysis?.signals;
+      const result = evaluate(finalAnswers, signals ?? defaultSignals());
       setResult(result);
       router.push("/results");
     } else {
@@ -82,6 +102,8 @@ export default function QuestionnairePage() {
 
   // ── Render: Questions phase ──────────────────────────────────────────────
 
+  if (!question) return null;
+
   return (
     <div className="flex flex-col gap-8 max-w-2xl mx-auto">
 
@@ -96,14 +118,14 @@ export default function QuestionnairePage() {
         <span className="text-cap-navy font-medium">Questions</span>
       </div>
 
-      {/* Document badge — shown if a doc was uploaded */}
-      {docSignals && (
+      {/* Document badge */}
+      {bidAnalysis && bidAnalysis.interpretation.confidence !== "low" && (
         <div className="flex items-center gap-2 bg-cap-light border border-blue-200 rounded-lg px-4 py-2.5">
           <svg className="w-4 h-4 text-cap-blue shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <span className="text-cap-blue text-xs font-semibold">
-            Bid document analysed — {docSignals.detectedThemes.length} signal{docSignals.detectedThemes.length !== 1 ? "s" : ""} detected
+            Bid document analysed — {questions.length} tailored questions selected
           </span>
         </div>
       )}
@@ -112,7 +134,7 @@ export default function QuestionnairePage() {
 
       <QuestionCard
         question={question}
-        selectedValue={selectedValue}
+        selectedValue={selectedValue as string | number | undefined}
         onSelect={handleSelect}
       />
 
@@ -120,38 +142,24 @@ export default function QuestionnairePage() {
       <div className="flex justify-between items-center">
         <button
           onClick={handleBack}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded border border-gray-300 text-cap-muted font-medium text-sm hover:border-cap-blue hover:text-cap-blue transition-colors"
+          className="rounded border border-gray-300 px-5 py-3 font-medium text-cap-muted text-sm hover:border-cap-blue hover:text-cap-blue transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
+          ← Back
         </button>
-
         <button
           onClick={handleNext}
-          disabled={!selectedValue}
-          className="inline-flex items-center gap-2 px-7 py-2.5 rounded bg-cap-blue hover:bg-cap-navy text-white font-semibold text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 shadow-card"
+          disabled={selectedValue === undefined}
+          className={`rounded px-6 py-3 font-semibold text-sm transition-colors shadow-card inline-flex items-center gap-2
+            ${selectedValue !== undefined
+              ? "bg-cap-blue text-white hover:bg-cap-navy"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
         >
-          {isLast ? "See Recommendation" : "Next"}
+          {isLast ? "See results" : "Next"}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
-      </div>
-
-      {/* Step dots */}
-      <div className="flex items-center justify-center gap-1.5">
-        {QUESTIONS.map((_, i) => (
-          <div
-            key={i}
-            className={`rounded-full transition-all duration-300 ${
-              i < step ? "w-2 h-2 bg-cap-blue" :
-              i === step ? "w-3 h-3 bg-cap-blue ring-4 ring-cap-light" :
-              "w-2 h-2 bg-gray-300"
-            }`}
-          />
-        ))}
       </div>
 
     </div>

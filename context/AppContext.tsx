@@ -1,49 +1,71 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import type { UserAnswers } from "@/lib/decisionEngine";
-import type { DecisionResult } from "@/lib/decisionEngine";
-import type { BidSignals } from "@/lib/bidSignals";
+import type { UserAnswers, DecisionResult } from "@/lib/decisionEngine";
+import type { BidAnalysis } from "@/lib/bidSignals";
+import type { Question } from "@/lib/questions";
 
 interface AppState {
-  answers: Partial<UserAnswers>;
-  result: DecisionResult | null;
+  // Document
   bidText: string;
   bidFileName: string;
-  bidSignals: BidSignals | null;
+  bidAnalysis: BidAnalysis | null;
+  // Questions
+  selectedQuestions: Question[];
+  answers: Partial<UserAnswers>;
+  // Result
+  result: DecisionResult | null;
+  // Setters
+  setBidDocument: (text: string, fileName: string, analysis: BidAnalysis) => void;
+  setSelectedQuestions: (questions: Question[]) => void;
   setAnswers: (answers: Partial<UserAnswers>) => void;
   setResult: (result: DecisionResult) => void;
-  setBidDocument: (text: string, fileName: string, signals: BidSignals) => void;
   reset: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [answers, setAnswers] = useState<Partial<UserAnswers>>({});
-  const [result, setResult] = useState<DecisionResult | null>(null);
   const [bidText, setBidText] = useState("");
   const [bidFileName, setBidFileName] = useState("");
-  const [bidSignals, setBidSignals] = useState<BidSignals | null>(null);
+  const [bidAnalysis, setBidAnalysisState] = useState<BidAnalysis | null>(null);
+  const [selectedQuestions, setSelectedQuestionsState] = useState<Question[]>([]);
+  const [answers, setAnswersState] = useState<Partial<UserAnswers>>({});
+  const [result, setResultState] = useState<DecisionResult | null>(null);
 
-  function setBidDocument(text: string, fileName: string, signals: BidSignals) {
+  function setBidDocument(text: string, fileName: string, analysis: BidAnalysis) {
     setBidText(text);
     setBidFileName(fileName);
-    setBidSignals(signals);
+    setBidAnalysisState(analysis);
+  }
+
+  function setSelectedQuestions(questions: Question[]) {
+    setSelectedQuestionsState(questions);
+  }
+
+  function setAnswers(a: Partial<UserAnswers>) {
+    setAnswersState(a);
+  }
+
+  function setResult(r: DecisionResult) {
+    setResultState(r);
   }
 
   function reset() {
-    setAnswers({});
-    setResult(null);
     setBidText("");
     setBidFileName("");
-    setBidSignals(null);
+    setBidAnalysisState(null);
+    setSelectedQuestionsState([]);
+    setAnswersState({});
+    setResultState(null);
   }
 
   return (
-    <AppContext.Provider
-      value={{ answers, result, bidText, bidFileName, bidSignals, setAnswers, setResult, setBidDocument, reset }}
-    >
+    <AppContext.Provider value={{
+      bidText, bidFileName, bidAnalysis,
+      selectedQuestions, answers, result,
+      setBidDocument, setSelectedQuestions, setAnswers, setResult, reset,
+    }}>
       {children}
     </AppContext.Provider>
   );
@@ -54,3 +76,4 @@ export function useAppState(): AppState {
   if (!ctx) throw new Error("useAppState must be used inside AppProvider");
   return ctx;
 }
+
