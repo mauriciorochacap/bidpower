@@ -93,6 +93,11 @@ export async function POST(request: Request) {
       return NextResponse.json(fallbackAnalysis());
     }
 
+    // If no API key configured, return fallback immediately
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(fallbackAnalysis());
+    }
+
     // Truncate to ~12,000 chars to stay within token limits
     const truncated = text.slice(0, 12000);
 
