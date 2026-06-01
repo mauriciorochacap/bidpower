@@ -14,7 +14,11 @@ import OpenAI from "openai";
 import type { BidAnalysis, DocumentSignals, Interpretation } from "@/lib/bidSignals";
 import { defaultSignals } from "@/lib/bidSignals";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 
 const SYSTEM_PROMPT = `You are an expert bid strategy consultant. You analyse bid response documents and extract structured decision signals.
 
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
     // Truncate to ~12,000 chars to stay within token limits
     const truncated = text.slice(0, 12000);
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
       response_format: { type: "json_object" },
       temperature: 0.2, // Low temperature for consistent structured output
