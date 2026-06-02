@@ -10,6 +10,7 @@ interface AppState {
   bidText: string;
   bidFileName: string;
   bidAnalysis: BidAnalysis | null;
+  whyUs: string;
   // Questions
   selectedQuestions: Question[];
   answers: Partial<UserAnswers>;
@@ -17,6 +18,7 @@ interface AppState {
   result: DecisionResult | null;
   // Setters
   setBidDocument: (text: string, fileName: string, analysis: BidAnalysis) => void;
+  setWhyUs: (s: string) => void;
   setSelectedQuestions: (questions: Question[]) => void;
   setAnswers: (answers: Partial<UserAnswers>) => void;
   setResult: (result: DecisionResult) => void;
@@ -29,6 +31,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bidText, setBidText] = useState("");
   const [bidFileName, setBidFileName] = useState("");
   const [bidAnalysis, setBidAnalysisState] = useState<BidAnalysis | null>(null);
+  const [whyUs, setWhyUsState] = useState("");
   const [selectedQuestions, setSelectedQuestionsState] = useState<Question[]>([]);
   const [answers, setAnswersState] = useState<Partial<UserAnswers>>({});
   const [result, setResultState] = useState<DecisionResult | null>(null);
@@ -37,6 +40,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBidText(text);
     setBidFileName(fileName);
     setBidAnalysisState(analysis);
+  }
+
+  function setWhyUs(s: string) {
+    setWhyUsState(s);
   }
 
   function setSelectedQuestions(questions: Question[]) {
@@ -55,6 +62,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBidText("");
     setBidFileName("");
     setBidAnalysisState(null);
+    setWhyUsState("");
     setSelectedQuestionsState([]);
     setAnswersState({});
     setResultState(null);
@@ -62,9 +70,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      bidText, bidFileName, bidAnalysis,
+      bidText, bidFileName, bidAnalysis, whyUs,
       selectedQuestions, answers, result,
-      setBidDocument, setSelectedQuestions, setAnswers, setResult, reset,
+      setBidDocument, setWhyUs, setSelectedQuestions, setAnswers, setResult, reset,
     }}>
       {children}
     </AppContext.Provider>

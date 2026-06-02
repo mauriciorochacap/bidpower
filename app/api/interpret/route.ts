@@ -20,7 +20,11 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
-const SYSTEM_PROMPT = `You are an expert bid strategy consultant. You analyse bid response documents and extract structured decision signals.
+const SYSTEM_PROMPT = `You are an expert bid strategy consultant. You analyse bid opportunities using two sources of context:
+1. WINNING THEMES: The team's self-assessed key differentiators and reasons for confidence
+2. BID DOCUMENT: The actual RFP, tender brief, or bid document
+
+Use both to extract structured decision signals. The winning themes reveal the team's capabilities and how they intend to differentiate — use this to calibrate differentiationNeed (lower if the team already has strong, specific differentiators) and beliefGap (lower if the winning themes align closely with the client's likely concerns).
 
 Extract ONLY the following JSON structure — no other text:
 
@@ -50,9 +54,10 @@ RULES:
 - Do NOT rely only on keywords. Infer intent from context.
 - Detect transformation vs incremental change.
 - Detect whether proof or belief is the primary need.
-- If the document is short or unclear, set confidence to "low" and list your assumptions.
+- If context is sparse, set confidence to "low" and list your assumptions.
 - decisionType: "proof" = client needs evidence it works; "persuasion" = client needs to believe in a vision; "compliance" = client is scoring against fixed criteria
-- beliefGap: how much the client needs to change their thinking to say yes
+- beliefGap: how much the client needs to change their thinking to say yes (consider winning themes when judging this)
+- differentiationNeed: how urgently the team must prove they are different from competitors (lower if winning themes are specific and credible)
 - timeFeasibility: estimate whether there is enough time to build an advanced artefact (low = tight, high = ample)
 - Always include all 8 signals in signalSummaries.`;
 
@@ -87,9 +92,12 @@ function fallbackAnalysis(): BidAnalysis {
 
 export async function POST(request: Request) {
   try {
-    const { text } = await request.json();
+    const { text, whyUs } = await request.json();
 
-    if (!text || typeof text !== "string" || text.trim().length < 50) {
+    const hasText = typeof text === "string" && text.trim().length >= 50;
+    const hasWhyUs = typeof whyUs === "string" && whyUs.trim().length >= 20;
+
+    if (!hasText && !hasWhyUs) {
       return NextResponse.json(fallbackAnalysis());
     }
 
@@ -98,8 +106,13 @@ export async function POST(request: Request) {
       return NextResponse.json(fallbackAnalysis());
     }
 
-    // Truncate to ~12,000 chars to stay within token limits
-    const truncated = text.slice(0, 12000);
+    // Truncate bid text to ~12,000 chars to stay within token limits
+    const truncated = hasText ? (text as string).slice(0, 12000) : "";
+
+    const parts: string[] = [];
+    if (hasWhyUs) parts.push(`WINNING THEMES — Why we believe we should win:\n${(whyUs as string).trim()}`);
+    if (truncated) parts.push(`BID DOCUMENT:\n${truncated}`);
+    const userContent = `Analyse the following context and return the JSON structure:\n\n${parts.join("\n\n")}`;
 
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
@@ -107,10 +120,7 @@ export async function POST(request: Request) {
       temperature: 0.2, // Low temperature for consistent structured output
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Analyse this bid document and return the JSON structure:\n\n${truncated}`,
-        },
+        { role: "user", content: userContent },
       ],
     });
 

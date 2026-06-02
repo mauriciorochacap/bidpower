@@ -18,7 +18,7 @@ type Phase = "upload" | "questions";
 
 export default function QuestionnairePage() {
   const router = useRouter();
-  const { setAnswers, setResult, setBidDocument } = useAppState();
+  const { setAnswers, setResult, setBidDocument, setWhyUs } = useAppState();
 
   const [phase, setPhase] = useState<Phase>("upload");
   const [step, setStep] = useState(0);
@@ -28,8 +28,9 @@ export default function QuestionnairePage() {
 
   // ── Upload handlers ──────────────────────────────────────────────────────
 
-  function handleUploadComplete(text: string, fileName: string, analysis: BidAnalysis) {
+  function handleUploadComplete(text: string, fileName: string, analysis: BidAnalysis, whyUs: string) {
     setBidDocument(text, fileName, analysis);
+    setWhyUs(whyUs);
     setBidAnalysis(analysis);
     const selected = selectQuestions(analysis.signals, analysis.interpretation);
     setQuestions(selected);
@@ -48,6 +49,7 @@ export default function QuestionnairePage() {
       },
     };
     setBidDocument("", "", fallbackAnalysis);
+    setWhyUs("");
     setBidAnalysis(fallbackAnalysis);
     const selected = selectQuestions(fallbackAnalysis.signals, fallbackAnalysis.interpretation);
     setQuestions(selected);

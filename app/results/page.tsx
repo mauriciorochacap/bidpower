@@ -56,7 +56,7 @@ function CriteriaBlock({ label, criteria }: { label: string; criteria: CriteriaR
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { result, reset, bidAnalysis, bidFileName } = useAppState();
+  const { result, reset, bidAnalysis, bidFileName, whyUs } = useAppState();
 
   useEffect(() => {
     if (!result) router.replace("/");
@@ -169,6 +169,17 @@ export default function ResultsPage() {
               </li>
             ))}
           </ol>
+        </div>
+      )}
+
+      {/* ── Winning themes ── */}
+      {whyUs && (
+        <div className="bg-white rounded-2xl shadow-card p-7 flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 rounded-full bg-amber-400" />
+            <h2 className="text-cap-navy font-bold text-lg">Winning themes used in this analysis</h2>
+          </div>
+          <p className="text-cap-muted text-sm leading-relaxed whitespace-pre-wrap">{whyUs}</p>
         </div>
       )}
 
