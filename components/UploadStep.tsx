@@ -72,30 +72,42 @@ export default function UploadStep({ onComplete, onSkip }: UploadStepProps) {
     <div className="flex flex-col gap-8 max-w-2xl mx-auto">
 
       {/* Header */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <div className="inline-flex items-center gap-2 bg-cap-light border border-blue-200 rounded-full px-3 py-1 w-fit">
           <span className="w-1.5 h-1.5 rounded-full bg-cap-blue"></span>
           <span className="text-cap-blue text-xs font-semibold uppercase tracking-widest">Step 1 of 2</span>
         </div>
-        <h2 className="text-2xl font-bold text-cap-navy tracking-tight">Set the context</h2>
-        <p className="text-cap-muted text-sm leading-relaxed">
-          Tell us why you should win, and optionally upload the bid document. Both together give the sharpest recommendation.
-        </p>
+        <h2 className="text-2xl font-bold text-cap-navy tracking-tight">Tell us about your bid</h2>
+        <div className="rounded-xl bg-cap-light border border-blue-200 px-4 py-3">
+          <p className="text-cap-navy text-sm font-semibold leading-snug">
+            We&apos;ll recommend whether a deck, clickable prototype, video, or no additional artefact is likely to improve your chances of winning — and explain why.
+          </p>
+          <p className="text-cap-muted text-xs mt-1 leading-relaxed">
+            The more context you give, the more confident and specific the recommendation.
+          </p>
+        </div>
       </div>
 
       {/* Why Us section */}
       <div className="flex flex-col gap-2">
         <label className="text-cap-navy font-semibold text-sm">
-          Why us? <span className="text-cap-blue">*</span>
+          Why are you well placed to win this bid? <span className="text-cap-blue">*</span>
         </label>
         <p className="text-cap-muted text-xs leading-relaxed">
-          Describe your winning themes — what makes you the right choice for this bid. Include key differentiators,
-          relevant experience, and why you believe you should win. Two paragraphs is ideal.
+          This helps assess your differentiation, how much the buyer already trusts your approach, what proof you can offer, and where the real win themes lie.
+          You don&apos;t need to be comprehensive — focus on what&apos;s most distinctive about your position.
         </p>
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {["Relevant experience", "Key differentiators", "Client relationship", "Proof points or case studies", "Risks or uncertainties"].map(hint => (
+            <span key={hint} className="text-xs bg-gray-100 text-cap-muted px-2.5 py-1 rounded-full border border-gray-200">
+              {hint}
+            </span>
+          ))}
+        </div>
         <textarea
           value={whyUs}
           onChange={e => setWhyUs(e.target.value)}
-          placeholder="e.g. We have delivered three similar transformation programmes at scale in the public sector, giving us a unique appreciation of the challenges this client faces. Our team includes the only accredited practitioners of this methodology in the UK, and our recent case study demonstrates measurable outcomes that directly mirror the objectives of this bid…"
+          placeholder="e.g. We have delivered three similar transformation programmes in the public sector, giving us deep familiarity with the challenges this client faces. Our team includes the only accredited practitioners of this methodology in the UK. Our most relevant case study — [Client X] — achieved outcomes that directly mirror the objectives of this bid, including a 40% reduction in processing time and measurable staff adoption…"
           rows={6}
           className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm text-cap-navy placeholder:text-gray-400 focus:outline-none focus:border-cap-blue transition-colors resize-none leading-relaxed mt-1"
         />
@@ -213,7 +225,7 @@ export default function UploadStep({ onComplete, onSkip }: UploadStepProps) {
             onClick={onSkip}
             className="flex-1 rounded border border-gray-300 px-5 py-3 font-medium text-cap-muted text-sm hover:border-cap-blue hover:text-cap-blue transition-colors"
           >
-            Skip — proceed without context
+            Skip — proceed with reduced confidence
           </button>
           <button
             onClick={handleContinue}

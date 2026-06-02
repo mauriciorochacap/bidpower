@@ -37,16 +37,16 @@ export const QUESTION_POOL: Question[] = [
 
   {
     id: "decisionInfluence",
-    text: "How much will this artefact influence whether we win?",
-    subtext: "Be honest — will the client's decision genuinely hinge on seeing or experiencing what we build, or have they already largely made up their mind?",
+    text: "How important is it that the client can see, experience, or understand the proposed solution before making a decision?",
+    subtext: "Consider whether the client's evaluation relies on paper-based scoring, or whether experiencing or visualising the solution would materially affect their confidence in your approach.",
     signal: "differentiationNeed",
     trigger: "always",
     priority: 1,
     type: "scale",
     options: [
-      { value: 1, label: "Unlikely — they've already mostly decided" },
-      { value: 2, label: "Possibly — it could tip the balance" },
-      { value: 3, label: "Definitely — this is the deciding factor" },
+      { value: 1, label: "Low — a written explanation is likely enough" },
+      { value: 2, label: "Medium — visualising the solution could help" },
+      { value: 3, label: "High — experiencing the solution is likely critical to their confidence" },
     ],
   },
 
